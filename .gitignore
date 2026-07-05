@@ -6,6 +6,9 @@
 *.iml
 .vscode/
 
+# 本地MCP服务
+mcp-server/
+
 # 系统文件
 Thumbs.db
 .DS_Store
