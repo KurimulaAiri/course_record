@@ -10,3 +10,7 @@
 	path = frontend
 	url = git@github.com:KurimulaAiri/class_times_record.git
 	branch = v1
+[submodule "mcp-server"]
+	path = mcp-server
+	url = git@github.com:KurimulaAiri/course_record_mcp_server.git
+	branch = main
