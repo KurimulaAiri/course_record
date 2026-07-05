@@ -1,0 +1,12 @@
+[submodule "backend"]
+	path = backend
+	url = git@github.com:KurimulaAiri/class_times_record_back.git
+	branch = micro_service
+[submodule "admin-frontend"]
+	path = admin-frontend
+	url = git@github.com:KurimulaAiri/class_record_admin_front.git
+	branch = main
+[submodule "frontend"]
+	path = frontend
+	url = git@github.com:KurimulaAiri/class_times_record.git
+	branch = v1

@@ -1,0 +1,12 @@
+# 临时文件
+.temp/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 系统文件
+Thumbs.db
+.DS_Store
+
