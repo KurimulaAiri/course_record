@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd D:/PRJ/fully-function-project/course_record/backend)",
+      "Bash(export JAVA_HOME=\"D:/JAVA/jdk/jdk21\")",
+      "Bash(mvn compile *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'fix\\(ci\\): 构建阶段跳过类型检查，使用 build-only *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'feat: 生产环境API地址配置为https://api.kurimula-airi.top *)",
+      "Bash(git *)",
+      "mcp__mcpServers__list_docker_containers",
+      "mcp__mcpServers__get_docker_system_info",
+      "mcp__mcpServers__list_docker_images",
+      "mcp__mcpServers__list_nacos_services",
+      "mcp__mcpServers__list_sentinel_apps",
+      "mcp__mcpServers__get_nacos_config",
+      "mcp__mcpServers__get_nacos_service_instances",
+      "mcp__mcpServers__get_sentinel_flow_rules",
+      "mcp__mcpServers__get_docker_container_info",
+      "mcp__mcpServers__get_docker_container_logs",
+      "Bash(npx tsx *)",
+      "Read(//c/Users/10953/.claude/**)",
+      "Read(//c/Users/10953/**)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); mcp=d.get\\('mcpServers',{}\\); print\\(json.dumps\\(mcp, indent=2, ensure_ascii=False\\)\\)\")",
+      "mcp__mcpServers__update_nacos_config",
+      "mcp__mcpServers__list_nacos_configs",
+      "Bash(node *)",
+      "Bash(mysqldump --version)",
+      "Bash(mysql *)",
+      "Bash(mysqldump *)",
+      "Bash(bash .temp/db-sync.sh *)",
+      "Bash(C:/Program Files/MySQL/MySQL Server 8.0/bin/mysql *)"
+    ]
+  }
+}

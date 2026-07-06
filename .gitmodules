@@ -1,12 +1,16 @@
 [submodule "class_times_record_back"]
 	path = class_times_record_back
-	url = https://github.com/KurimulaAiri/class_times_record_back.git
+	url = git@github.com:KurimulaAiri/class_times_record_back.git
+	branch = micro_service
 [submodule "course_record_mcp_server"]
 	path = course_record_mcp_server
 	url = git@github.com:KurimulaAiri/course_record_mcp_server.git
+	branch = main
 [submodule "class_times_record"]
 	path = class_times_record
-	url = https://github.com/KurimulaAiri/class_times_record.git
+	url = git@github.com:KurimulaAiri/class_times_record.git
+	branch = v1
 [submodule "class_record_admin_front"]
 	path = class_record_admin_front
-	url = https://github.com/KurimulaAiri/class_record_admin_front.git
+	url = git@github.com:KurimulaAiri/class_record_admin_front.git
+	branch = main
