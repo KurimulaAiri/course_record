@@ -63,3 +63,38 @@ interface StudentResponse {
 
 ## Git 提交信息规范
 - 使用中文
+
+## 分支管理
+- **后端 (class_times_record_back)**：主分支为 `master`，开发分支已合并到主线
+- **前端小程序 (class_times_record)**：主分支为 `main`
+- **前端管理面板 (class_record_admin_front)**：主分支为 `main`（Git checkout 已启用）
+- Jenkinsfile 配置的 GIT_BRANCH 必须与当前主分支保持一致
+
+## 本地开发环境
+
+### Java 环境
+- 项目要求 JDK 21（Spring Boot 4.0.4 依赖），本地路径 `D:\env\java\jdk-21.0.8.9-hotspot`
+- 编译时需设置环境变量 `JAVA_HOME=D:\env\java\jdk-21.0.8.9-hotspot`
+
+### Gateway 本地开发
+- Gateway 默认使用 Nacos 的 `lb://` 路由（负载均衡到所有注册实例）
+- 本地开发必须激活 dev profile：`-Dspring.profiles.active=dev`，否则会请求远程服务器
+- dev profile 会用 localhost 直连路由覆盖 Nacos 的 `lb://` 路由配置
+- IDEA 运行配置 `.run/GatewayApplication.run.xml` 已预设该参数
+
+### 小程序前端
+- 开发模式 (`NODE_ENV=development`) 使用 `http://localhost:9999`（本地 Gateway）
+- 生产/预览模式使用 `https://api.kurimula-airi.top`（远程服务器）
+- openId 存储在 `uni.getStorageSync("openId")`
+
+## 部署说明
+
+### Jenkins 构建
+- 后端任务名：`class_time_record_back`（非参数化任务）
+- 微服务任务名：`course-record-microservice`（参数化任务，支持 DEPLOY_SCOPE/SKIP_BUILD/ROLLBACK 参数）
+- 前端管理面板任务名：`cr-admin-dashboard`（非参数化任务）
+
+### Docker 容器部署
+- Gateway：JAR 直跑模式（非 Docker），部署目录 `/opt/java-deploy/class_times_record_back/gateway`
+- auth-service / business-service / admin-service：Docker 容器部署，目录 `/opt/java-deploy/class_times_record_docker`
+- 端口映射：Gateway=9999, Business=10001, Auth=10002, Admin=10003

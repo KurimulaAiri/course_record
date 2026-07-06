@@ -8,16 +8,16 @@ Course recording system (课时记录系统) for educational training institutio
 
 | Module | Directory | Stack | Purpose |
 |--------|-----------|-------|---------|
-| Admin Frontend | `admin-frontend/` | Vue 3 + Element Plus + Vite 8 + pnpm | Management dashboard for system admins |
-| Mini Program Frontend | `frontend/uni-app/` | uni-app (Vue 3) + Vite 5 + pnpm | WeChat mini-program for teachers & parents |
-| Backend | `backend/` | Spring Cloud Alibaba (Java 21, Maven multi-module) | Microservices: gateway, auth, business, admin |
-| MCP Server | `mcp-server/` | Node.js + TypeScript + @modelcontextprotocol/sdk | Local ops API for Jenkins/Nacos/Sentinel/Docker/MySQL |
+| Admin Frontend | `class_record_admin_front/` | Vue 3 + Element Plus + Vite 8 + pnpm | Management dashboard for system admins |
+| Mini Program Frontend | `class_times_record/` | uni-app (Vue 3) + Vite 5 + pnpm | WeChat mini-program for teachers & parents |
+| Backend | `class_times_record_back/` | Spring Cloud Alibaba (Java 21, Maven multi-module) | Microservices: gateway, auth, business, admin |
+| MCP Server | `course_record_mcp_server/` | Node.js + TypeScript + @modelcontextprotocol/sdk | Local ops API for Jenkins/Nacos/Sentinel/Docker/MySQL |
 
 Detailed conventions and architecture for each module are documented in the sections below (originally in each module's `AGENTS.md`, now consolidated here).
 
 ## Backend Architecture (Spring Cloud Alibaba)
 
-Maven parent POM at `backend/pom.xml` builds 5 modules in order:
+Maven parent POM at `class_times_record_back/pom.xml` builds 5 modules in order:
 - `common` — shared entities, DTOs, VOs, converters (MapStruct), utils (SM2/SM3/JWT), service interfaces
 - `gateway` — Spring Cloud Gateway (port 9999, service `cr-gateway`), JWT auth filter, routing
 - `auth-service` — auth/menu/permissions (port 10002, `cr-auth-service`)
@@ -79,7 +79,7 @@ pnpm test:e2e         # Playwright
 ### Mini Program Frontend
 
 ```bash
-cd frontend/uni-app
+cd class_times_record
 pnpm install
 pnpm dev:mp-weixin    # Dev → WeChat mini-program (auto-opens WeChat dev tools)
 pnpm build:mp-weixin  # Production build
@@ -113,18 +113,18 @@ Two distinct auth flows:
 
 ## Docker Deployment
 
-Docker Compose file (`backend/docker-compose.yml`) and Jenkins CI/CD pipeline (`backend/pipeline/Jenkinsfile`) are in the local repo. Gateway runs as a plain JAR on the host, not in a container.
+Docker Compose file (`class_times_record_back/docker-compose.yml`) and Jenkins CI/CD pipeline (`class_times_record_back/pipeline/Jenkinsfile`) are in the local repo. Gateway runs as a plain JAR on the host, not in a container.
 
 ---
 
 # Backend Detailed Conventions
 
-> 原文件：`backend/AGENTS.md`（已合并到根目录）
+> 原文件：`class_times_record_back/AGENTS.md`（已合并到根目录）
 
 ## 项目结构
 
 ```
-backend/
+class_times_record_back/
 ├── common/                # 共享代码库：Entity、DTO、VO、Converter、Service 接口、工具类
 │   └── src/main/java/com/shiroko/
 │       ├── annotation/    # 自定义注解（BaseDateTimeToString、UpdateStudentCount 等）
@@ -211,7 +211,7 @@ backend/
 
 ### Nacos API
 
-Nacos API 已集成到 MCP Server（`mcp-server/server.ts`），可通过 MCP 工具直接调用：
+Nacos API 已集成到 MCP Server（`course_record_mcp_server/server.ts`），可通过 MCP 工具直接调用：
 - `list_nacos_services` — 列出注册服务
 - `list_nacos_configs` — 列出配置文件
 - `get_nacos_config` — 获取配置内容
@@ -518,8 +518,8 @@ sys_role    N──N sys_menu       (sys_role_menu 关联表)
 
 ## 相关文档
 
-- [后端架构设计文档](backend/docs/architecture.md) — 系统架构、Gateway 过滤器、认证流程、数据库设计
-- [后端 README](backend/README.md) — 项目介绍、功能列表、技术栈、构建说明
+- [后端架构设计文档](class_times_record_back/docs/architecture.md) — 系统架构、Gateway 过滤器、认证流程、数据库设计
+- [后端 README](class_times_record_back/README.md) — 项目介绍、功能列表、技术栈、构建说明
 
 ## Building & Running
 
@@ -618,12 +618,12 @@ cd admin-service && mvn spring-boot:run     # port 10003
 
 # Admin Frontend Detailed Conventions
 
-> 原文件：`admin-frontend/AGENTS.md`（已合并到根目录）
+> 原文件：`class_record_admin_front/AGENTS.md`（已合并到根目录）
 
 ## 项目结构
 
 ```
-admin-frontend/
+class_record_admin_front/
 ├── src/
 │   ├── api/                # API 接口层（按业务模块分目录）
 │   ├── components/         # 共享组件和工具（图标映射等）
@@ -840,7 +840,7 @@ views/{module}/{page}/
 
 ## 相关文档
 
-- [管理前端 README](admin-frontend/README.md) — 功能概览、技术栈、构建说明
+- [管理前端 README](class_record_admin_front/README.md) — 功能概览、技术栈、构建说明
 
 ## Building & Running
 
@@ -892,14 +892,14 @@ pnpm preview
 
 # Mini Program Frontend Detailed Conventions
 
-> 原文件：`frontend/uni-app/AGENTS.md`（已合并到根目录）
+> 原文件：`class_times_record/AGENTS.md`（已合并到根目录）
 
 基于 uni-app + Vue 3 + TypeScript 的微信小程序前端，面向教育培训机构的教师和家长。
 
 ## 项目结构
 
 ```
-frontend/uni-app/
+class_times_record/
 ├── src/
 │   ├── api/                # API 接口层（按业务模块分目录）
 │   ├── components/         # 通用组件
@@ -1126,8 +1126,8 @@ pnpm type-check
 
 ## 相关文档
 
-- [小程序前端架构设计文档](frontend/uni-app/docs/architecture.md) — 系统架构、核心机制、安全设计、页面路由、编码规范
-- [小程序前端 README](frontend/uni-app/README.md) — 系统架构概览、Gateway 路由规则、技术栈
+- [小程序前端架构设计文档](class_times_record/docs/architecture.md) — 系统架构、核心机制、安全设计、页面路由、编码规范
+- [小程序前端 README](class_times_record/README.md) — 系统架构概览、Gateway 路由规则、技术栈
 
 ---
 
@@ -1138,7 +1138,7 @@ pnpm type-check
 ## 项目结构
 
 ```
-mcp-server/
+course_record_mcp_server/
 ├── server.ts           # MCP Server 主入口（单文件实现，所有工具注册）
 ├── package.json        # 依赖与启动脚本
 ├── tsconfig.json       # TypeScript 配置（ES2022 + Node16 模块）
