@@ -1,0 +1,12 @@
+[submodule "class_times_record_back"]
+	path = class_times_record_back
+	url = https://github.com/KurimulaAiri/class_times_record_back.git
+[submodule "course_record_mcp_server"]
+	path = course_record_mcp_server
+	url = git@github.com:KurimulaAiri/course_record_mcp_server.git
+[submodule "class_times_record"]
+	path = class_times_record
+	url = https://github.com/KurimulaAiri/class_times_record.git
+[submodule "class_record_admin_front"]
+	path = class_record_admin_front
+	url = https://github.com/KurimulaAiri/class_record_admin_front.git
