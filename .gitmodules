@@ -1,7 +1,7 @@
 [submodule "class_times_record_back"]
 	path = class_times_record_back
 	url = git@github.com:KurimulaAiri/class_times_record_back.git
-	branch = micro_service
+	branch = master
 [submodule "course_record_mcp_server"]
 	path = course_record_mcp_server
 	url = git@github.com:KurimulaAiri/course_record_mcp_server.git
