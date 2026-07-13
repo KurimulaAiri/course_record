@@ -64,6 +64,14 @@ interface StudentResponse {
 ## Git 提交信息规范
 - 使用中文
 
+### Git 推送前检查清单
+- **每次执行 git commit 和 push 前，必须更新以下文档**：
+  - `class_times_record_back/docs/` 目录下的所有文档（如 test-cases.md、架构设计文档等）
+  - `class_times_record_back/CLAUDE.md` — 项目架构和开发指南
+  - `AGENTS.md`（如果存在）— AI Agent 协作规范
+- 确保文档内容与最新代码变更保持一致
+- 文档更新与代码提交在同一 commit 中完成
+
 ## 分支管理
 - **后端 (class_times_record_back)**：主分支为 `master`，开发分支已合并到主线
 - **前端小程序 (class_times_record)**：主分支为 `main`
@@ -86,6 +94,20 @@ interface StudentResponse {
 - 开发模式 (`NODE_ENV=development`) 使用 `http://localhost:9999`（本地 Gateway）
 - 生产/预览模式使用 `https://api.kurimula-airi.top`（远程服务器）
 - openId 存储在 `uni.getStorageSync("openId")`
+
+### UniApp 条件编译规范
+- **微信小程序专属代码必须使用 `#ifdef MP-WEIXIN` / `#endif` 进行条件编译隔离**
+  - 涉及微信特有 API（如 `wx.getSetting`、`wx.requestSubscribeMessage`）时必须包裹
+  - 非微信平台需提供 `#ifndef MP-WEIXIN` 降级逻辑
+  - 示例：
+    ```javascript
+    // #ifdef MP-WEIXIN
+    uni.getSetting({ withSubscriptions: true, ... });
+    // #endif
+    // #ifndef MP-WEIXIN
+    resolve(false); // 非微信平台降级处理
+    // #endif
+    ```
 
 ## 部署说明
 
