@@ -9,7 +9,7 @@
 [submodule "class_times_record"]
 	path = class_times_record
 	url = git@github.com:KurimulaAiri/class_times_record.git
-	branch = v1
+	branch = main
 [submodule "class_record_admin_front"]
 	path = class_record_admin_front
 	url = git@github.com:KurimulaAiri/class_record_admin_front.git
