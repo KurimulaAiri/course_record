@@ -52,7 +52,7 @@ Production: `lb://{service-name}`, DEV: `http://localhost:{port}`. Config in Nac
 
 ### Security
 
-**Mini Program auth flow**: SM2 encrypt password (cipherMode=1, "04" prefix) → backend SM2 decrypt → SM3+salt hash for storage. JWT (5-min expiry, HMAC-SHA256). Every request signed with SM3 (`x-sign`, `x-timestamp`, `x-nonce` headers). 401 triggers silent refresh.
+**Mini Program auth flow**: SM2 encrypt password (cipherMode=1, "04" prefix) → backend SM2 decrypt → SM3+salt hash for storage. JWT (5-min expiry, HMAC-SHA256). Every request signed with SM3 (`x-sign`, `x-timestamp`, `x-nonce` headers). 401 triggers silent refresh. AuthServiceImpl 中 `userPlatformMapper.selectOne` 按 `lastLoginRole=3` 限定家长角色查询。
 
 **Admin auth flow**: Password plaintext (HTTPS) → BCrypt hash for storage. JWT for session. No SM3 request signing.
 
@@ -73,42 +73,45 @@ Nacos API available via MCP tools (`list_nacos_services`, `get_nacos_config`, `u
 
 Database: `class_times_record` (utf8mb4) on `121.196.229.10:3306`. Access via MCP tools (`execute_db_query`, `execute_db_update`, `get_db_config`). DDL requires `allow_ddl=true`; DROP/TRUNCATE/GRANT/REVOKE always forbidden.
 
+**Table naming convention**: Business tables use `c_` prefix (e.g., `c_institution`, `c_student`, `c_teacher`, `c_course`, `c_class`, `c_user`, `c_user_auth`, `c_user_platform`, `c_parent`, `c_parent_student`, `c_class_student`, `c_class_teacher`, `c_class_schedule`, `c_course_record`, `c_record`, `c_permission`, `c_permission_record`, `c_menu`, `c_admin`, `c_wx_subscribe_record`, `c_wx_student_subscribe`, `c_subscription_plan`). Admin/system tables use `sys_` prefix (e.g., `sys_user`, `sys_role`, `sys_menu`, `sys_role_menu`, `sys_user_role`, `sys_operation_log`, `sys_config`).
+
 ### Backend Conventions
 
 **DTO/VO directory**: One subfolder per entity — `dto/{entity}/`, `vo/{entity}/`. Admin DTOs: `dto/admin/{entity}/`, prefixed `Admin`.
 
 **Mapper**: One per entity, `EntityNameMapper`. Shared mappers in `common/src/.../mapper/`. Service-specific mappers in microservice `mapper/` package. **No duplicate mappers across services** — extract to common. `Class` → `ClazzMapper`.
 
-**Entity inheritance**: `BaseEntity` (empty base) → `RoleBaseEntity` (user_id/is_available/username) → Teacher, Parent. Student inherits BaseEntity directly.
+**Entity inheritance**: `BaseEntity` (empty base) → `RoleBaseEntity` (user_id/is_available/username) → Teacher (+isInstitutionAdmin, replacing admin table association), Parent. Student inherits BaseEntity directly. SubscriptionPlan implements Serializable directly.
 
 **user_auth.role_id mapping** (actually `permission.id`):
 
 | role_id | Role | user_id maps to |
 |---------|------|----------------|
 | 1 | admin | sys_user.id |
-| 3 | parent | parent.id |
-| 4 | teacher | teacher.teacher_id |
-| 5 | student | student.id |
+| 3 | parent | c_parent.id |
+| 4 | teacher | c_teacher.teacher_id |
+| 5 | student | c_student.id |
 
 ### Database Relationships
 
 ```
-institution 1──N teacher        institution 1──N course
-institution 1──N student        course 1──N class
-class N──N teacher (class_teacher)   class N──N student (class_student)
-class 1──N class_schedule            student 1──N course_record
-course 1──N course_record            course_record 1──N record
-parent N──N student (parent_student, with is_primary/relation)
-user 1──1 parent (parent.user_id→user.id, uk_user_id)
-user 1──N user_platform (multi-device, each device has open_id)
-parent 1──N subscribe_record (per open_id independent tracking)
+c_institution 1──N c_teacher        c_institution 1──N c_course
+c_institution 1──N c_student        c_course 1──N c_class
+c_class N──N c_teacher (c_class_teacher)   c_class N──N c_student (c_class_student)
+c_class 1──N c_class_schedule            c_student 1──N c_course_record
+c_course 1──N c_course_record            c_course_record 1──N c_record
+c_parent N──N c_student (c_parent_student, with is_primary/relation)
+c_user 1──1 c_parent (c_parent.user_id→c_user.id, uk_user_id)
+c_user 1──N c_user_platform (multi-device, each device has open_id)
+c_parent 1──N c_wx_subscribe_record (per open_id independent tracking)
+c_institution 1──1 c_subscription_plan (subscription_plan_id)
 
 sys_user N──N sys_role (sys_user_role)   sys_role N──N sys_menu (sys_role_menu)
 ```
 
-**Core tables**: institution, teacher, student, parent, course, class, class_schedule, course_record, record
-**Link tables**: user_auth, user, user_platform, class_teacher, class_student, parent_student, subscribe_record, permission_record, permission, menu
-**Admin tables**: sys_user, sys_role, sys_menu, sys_user_role, sys_role_menu, sys_operation_log
+**Core tables**: c_institution, c_teacher, c_student, c_parent, c_course, c_class, c_class_schedule, c_course_record, c_record, c_subscription_plan
+**Link tables**: c_user_auth, c_user, c_user_platform, c_class_teacher, c_class_student, c_parent_student, c_wx_subscribe_record, c_wx_student_subscribe, c_permission_record, c_permission, c_menu
+**Admin tables**: sys_user, sys_role, sys_menu, sys_user_role, sys_role_menu, sys_operation_log, sys_config
 
 ### Adding a Backend Feature
 
@@ -121,6 +124,15 @@ sys_user N──N sys_role (sys_user_role)   sys_role N──N sys_menu (sys_rol
 7. ServiceImpl → corresponding microservice
 8. Controller → corresponding microservice (calls Service only, never Mapper)
 9. Route → `application-dev.yml` / Nacos `cr-gateway.yaml` (if new prefix needed)
+
+### Notable API Additions
+
+| Endpoint | Method | Service | Description |
+|----------|--------|---------|-------------|
+| `/biz/teacher/delete` | POST | business-service | 删除教师及其关联 user_auth、user 记录 |
+| `/biz/student/cancel_subscribe` | POST | business-service | 取消家长对学生的微信订阅通知 |
+| `/admin/teacher_auth/toggle_institution_admin` | POST | admin-service | 切换教师机构管理员身份 |
+| `/admin/teacher/delete` | POST | admin-service | 管理端删除教师 |
 
 ---
 
@@ -137,10 +149,13 @@ sys_user N──N sys_role (sys_user_role)   sys_role N──N sys_menu (sys_rol
 - **No `any`**: Use types from `index.d.ts`.
 - **Reused components/tools**: Must go in `src/components/`.
 - **Token**: `Authorization: Bearer {accessToken}`, stored in localStorage `admin_token` / `admin_refresh_token`. 401 → auto refresh via `POST /admin/user/refresh`.
+- **Login verification**: Slider CAPTCHA dialog (`vue3-slide-verify`) pops up after form validation passes, before sending login request.
 
 ### API Modules
 
 Each module: `src/api/{module}/index.ts`, all paths start with `/admin/` or `/biz/`. Modules: auth, user, role, menu, dashboard, log, institution, student, teacher, teacher-auth, course, class, class-schedule, course-record, record, mini-menu.
+
+**Admin teacher-auth module**: `/admin/teacher_auth/` — 教师账号管理（get/update_account/update_password）+ 机构管理员身份切换（`toggle_institution_admin`）。机构管理员标识存储在 `c_teacher.is_institution_admin` 字段，与系统管理员(admin表)是不同身份。
 
 ### Design System
 
@@ -180,8 +195,13 @@ Primary: `#e8a838` (amber), Sidebar: `#1a1f2e`, BG: `#f5f6fa`, Dark: `#0f1419`. 
 | PageFooter | `@/components/page-footer/index.vue` | Bottom action buttons |
 | SearchFilterBar | `@/components/search-filter-bar/index.vue` | Search & filter |
 | FloatingActionButton | `@/components/floating-action-button/index.vue` | Floating action |
+| EmptyState | `@/components/empty-state/index.vue` | Empty data placeholder (text + optional tip) |
 
 FormGroup types: `input`, `textarea`, `radio` (needs `options`), `select` (needs `options`), `date` (optional `column: true`), `time`, `text` (`mode: "display"`), `number`, `switch` (needs `options`).
+
+**Constants**: `ROLE` enum from `@/config/common` — `{ ADMIN: 1, PARENT: 3, TEACHER: 4, STUDENT: 5 }`. Use instead of magic numbers.
+
+**EventChannel**: `jump()` 默认使用 EventChannel 传参（`useEventChannel=true`），事件名 `pageDataTransfer`。接收方使用 `usePageData<T>()`。redirect/relaunch 走 URL 传参。
 
 ### API Modules
 
@@ -258,4 +278,4 @@ Docker Compose (`class_times_record_back/docker-compose.yml`), all services `net
 
 ## WeChat Subscribe Message
 
-微信订阅消息为一次性授权模型。前端在用户 tap 同步调用栈中调用 `wx.requestSubscribeMessage`，授权后通过 `/auth/record_subscribe` 记录次数。按 `(parent_id, open_id, template_id)` 跟踪，同一家长多设备各自独立计数。教师扣课时，business-service 查家长 open_id，按 openId 去重推送（同一 openId 只发一次），发送成功则授权次数 -1。查询订阅状态只查当前 openId，不聚合其他设备。WeChatApiService 在 common 包，auth/business 共用。
+微信订阅消息为一次性授权模型。前端在用户 tap 同步调用栈中调用 `wx.requestSubscribeMessage`，授权后通过 `/auth/record_subscribe` 记录次数。按 `(parent_id, open_id, template_id)` 跟踪，同一家长多设备各自独立计数。教师扣课时，business-service 查家长 open_id，按 openId 去重推送（同一 openId 只发一次），发送成功则授权次数 -1。查询订阅状态只查当前 openId，不聚合其他设备。WeChatApiService 在 common 包，auth/business 共用。取消订阅接口：`POST /biz/student/cancel_subscribe`（删除 `c_wx_student_subscribe` 和 `c_wx_subscribe_record` 记录）。`c_wx_student_subscribe` 表以 `(student_id, is_primary)` 维度跟踪订阅关系，解耦 parent.userId 绑定链路。

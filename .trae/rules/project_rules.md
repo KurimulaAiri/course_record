@@ -63,6 +63,21 @@ interface StudentResponse {
 
 ## Git 提交信息规范
 - 使用中文
+- **格式**：`<类型>: <简要中文描述>`
+  - 类型与描述之间用 `: `（冒号+空格）分隔
+  - 描述应简明扼要，说明"做了什么"，避免冗余上下文
+- **类型取值**：
+  - `feat` — 新功能、新工具、新接口
+  - `fix` — 修复 bug、修复配置问题、修复部署问题
+  - `refactor` — 重构（不改变功能）
+  - `docs` — 文档变更
+  - `debug` — 临时调试代码（上线前应移除）
+  - `chore` — 构建、依赖、CI 等杂项变更
+- **示例**：
+  - `feat: 添加宝塔文件管理API工具(11个工具) - 目录浏览/文件读写/创建删除/复制移动/权限查询/路径检测/磁盘占用`
+  - `fix: 容器内服务URL改为localhost直连,绕过Nginx反代SocketError`
+  - `fix: deploy.sh改用grep逐个提取变量，彻底解决BT_API_SK解析问题`
+  - `feat: trigger_jenkins_job默认分支从micro_service改为master（微服务已合并到主线）`
 
 ### Git 推送前检查清单
 - **每次执行 git commit 和 push 前，必须更新以下文档**：
