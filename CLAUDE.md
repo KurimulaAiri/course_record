@@ -56,12 +56,16 @@ Production: `lb://{service-name}`, DEV: `http://localhost:{port}`. Config in Nac
 
 **Admin auth flow**: Password plaintext (HTTPS) → BCrypt hash for storage. JWT for session. No SM3 request signing.
 
+**Token blacklist**: Access Token 和 Refresh Token 均为无状态 JWT，登出时加入 Redis 黑名单（TTL=剩余有效期）。Gateway `JwtAuthFilter` 校验 Access Token 黑名单，auth-service `refreshAccessToken` 校验 Refresh Token 黑名单。`TokenBlacklistService` 管理 Access/Refresh 黑名单（`@ConditionalOnWebApplication(SERVLET)` 避免在 Gateway 加载）。Gateway 使用 `ReactiveRedisTemplate` + `ReactiveRedisConfig` 进行非阻塞黑名单查询。
+
+**课时扣减校验**: 扣课时双重校验——Java 层 `checkCourseRecordExpired` 前置校验过期时间（`COURSE_EXPIRED` code=1003），SQL 层 `updateRestTime` WHERE 条件包含 `(expire_time IS NULL OR expire_time > NOW())` 兜底。余额不足错误码 `COURSE_BALANCE_NOT_ENOUGH`(1001) 与过期错误码 `COURSE_EXPIRED`(1003) 区分。
+
 ### Interceptors per Service
 
 - auth-service: `JwtInterceptor` + `SignInterceptor` + `UserInterceptor` (AuthWebConfig)
 - admin-service: `AdminJwtInterceptor` + `UserInterceptor` (AdminWebConfig)
 - business-service: `SignInterceptor` + `UserInterceptor` (common WebConfig)
-- gateway: `JwtAuthFilter` (unified JWT check, public paths bypassed) + `GatewayUserFilter` (X-User-Id/X-User-Role → UserContext)
+- gateway: `JwtAuthFilter` (unified JWT check, Redis blacklist check, public paths bypassed) + `GatewayUserFilter` (X-User-Id/X-User-Role → UserContext)
 
 ### Nacos Config
 
