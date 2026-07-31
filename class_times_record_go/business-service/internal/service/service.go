@@ -48,7 +48,7 @@ func (s *InstitutionService) GetInstitutionByID(id int64) *response.ResponseDTO 
 		return response.Fail("机构不存在")
 	}
 
-	return response.Success(inst)
+	return response.Success(ToInstitutionVO(inst))
 }
 
 // GetInstitutionByOpenID 按openId查机构列表
@@ -66,7 +66,14 @@ func (s *InstitutionService) GetInstitutionByOpenID(openID string) *response.Res
 		return response.FailWithCode(response.CodeServerError, "系统异常")
 	}
 
-	return response.Success(list)
+	// 转为 VO 列表
+	voList := make([]*InstitutionVO, 0, len(list))
+	for _, inst := range list {
+		if vo := ToInstitutionVO(inst); vo != nil {
+			voList = append(voList, vo)
+		}
+	}
+	return response.Success(voList)
 }
 
 // GetInstitutionByCode 按机构编码查机构
@@ -86,7 +93,7 @@ func (s *InstitutionService) GetInstitutionByCode(code string) *response.Respons
 		return response.Fail("机构不存在")
 	}
 
-	return response.Success(inst)
+	return response.Success(ToInstitutionVO(inst))
 }
 
 // GetInstitutionByStudentID 按学生ID查机构
@@ -106,7 +113,7 @@ func (s *InstitutionService) GetInstitutionByStudentID(studentID int64) *respons
 		return response.Fail("机构不存在")
 	}
 
-	return response.Success(inst)
+	return response.Success(ToInstitutionVO(inst))
 }
 
 // ============================================================
@@ -138,7 +145,7 @@ func (s *StudentService) GetStudentByID(id int64) *response.ResponseDTO {
 		return response.Fail("学生不存在")
 	}
 
-	return response.Success(student)
+	return response.Success(ToStudentVO(student))
 }
 
 // GetStudentByParentID 按家长ID查学生列表
@@ -153,7 +160,7 @@ func (s *StudentService) GetStudentByParentID(parentID int64) *response.Response
 		return response.FailWithCode(response.CodeServerError, "系统异常")
 	}
 
-	return response.Success(list)
+	return response.Success(ToStudentVOList(list))
 }
 
 // GetStudentByTeacherID 按教师ID查学生列表
@@ -168,7 +175,7 @@ func (s *StudentService) GetStudentByTeacherID(teacherID int64) *response.Respon
 		return response.FailWithCode(response.CodeServerError, "系统异常")
 	}
 
-	return response.Success(list)
+	return response.Success(ToStudentVOList(list))
 }
 
 // GetStudentByInstitutionID 按机构ID查学生列表
@@ -183,7 +190,7 @@ func (s *StudentService) GetStudentByInstitutionID(institutionID int64) *respons
 		return response.FailWithCode(response.CodeServerError, "系统异常")
 	}
 
-	return response.Success(list)
+	return response.Success(ToStudentVOList(list))
 }
 
 // ============================================================
@@ -215,7 +222,7 @@ func (s *TeacherService) GetTeacherByID(id int64) *response.ResponseDTO {
 		return response.Fail("教师不存在")
 	}
 
-	return response.Success(teacher)
+	return response.Success(ToTeacherVO(teacher))
 }
 
 // GetTeacherByInstitutionID 按机构ID查教师列表
@@ -230,7 +237,7 @@ func (s *TeacherService) GetTeacherByInstitutionID(institutionID int64) *respons
 		return response.FailWithCode(response.CodeServerError, "系统异常")
 	}
 
-	return response.Success(list)
+	return response.Success(ToTeacherVOList(list))
 }
 
 // ============================================================
@@ -270,4 +277,100 @@ func ToInstitutionVO(inst *entity.Institution) *InstitutionVO {
 	}
 	vo.SubscriptionPlanName = inst.SubscriptionPlanName.String
 	return vo
+}
+
+// StudentVO 学生视图对象（对齐 Java QueryStudentVO）
+//
+// 使用普通类型而非 sql.NullXxx，避免 JSON 序列化输出对象格式
+type StudentVO struct {
+	ID            int64  `json:"id"`            // 学生ID
+	Avatar        string `json:"avatar"`        // 头像URL
+	StudentName   string `json:"studentName"`   // 学生姓名
+	InstitutionID int64  `json:"institutionId"` // 机构ID
+	Sex           int64  `json:"sex"`           // 性别（0=未知,1=男,2=女）
+	Birth         string `json:"birth"`         // 出生日期
+	School        string `json:"school"`        // 学校
+	Address       string `json:"address"`       // 地址
+	CreateTime    string `json:"createTime"`    // 创建时间
+	UpdateTime    string `json:"updateTime"`    // 更新时间
+}
+
+// ToStudentVO 实体转 VO
+func ToStudentVO(s *entity.Student) *StudentVO {
+	if s == nil {
+		return nil
+	}
+	vo := &StudentVO{}
+	if s.ID.Valid {
+		vo.ID = s.ID.Int64
+	}
+	vo.Avatar = s.Avatar.String
+	vo.StudentName = s.StudentName.String
+	if s.InstitutionID.Valid {
+		vo.InstitutionID = s.InstitutionID.Int64
+	}
+	if s.Sex.Valid {
+		vo.Sex = s.Sex.Int64
+	}
+	vo.Birth = entity.FormatTime(s.Birth)
+	vo.School = s.School.String
+	vo.Address = s.Address.String
+	vo.CreateTime = entity.FormatTime(s.CreateTime)
+	vo.UpdateTime = entity.FormatTime(s.UpdateTime)
+	return vo
+}
+
+// ToStudentVOList 实体列表转 VO 列表
+func ToStudentVOList(list []*entity.Student) []*StudentVO {
+	result := make([]*StudentVO, 0, len(list))
+	for _, s := range list {
+		if vo := ToStudentVO(s); vo != nil {
+			result = append(result, vo)
+		}
+	}
+	return result
+}
+
+// TeacherVO 教师视图对象（对齐 Java QueryTeacherVO）
+type TeacherVO struct {
+	TeacherID           int64  `json:"teacherId"`           // 教师ID（主键）
+	UserID              int64  `json:"userId"`              // 关联用户ID
+	IsAvailable         bool   `json:"isAvailable"`         // 是否可用
+	Username            string `json:"username"`            // 用户名
+	InstitutionID       int64  `json:"institutionId"`       // 机构ID
+	IsInstitutionAdmin  bool   `json:"isInstitutionAdmin"`  // 是否机构管理员
+	Phone               string `json:"phone"`               // 手机号
+}
+
+// ToTeacherVO 实体转 VO
+func ToTeacherVO(t *entity.Teacher) *TeacherVO {
+	if t == nil {
+		return nil
+	}
+	vo := &TeacherVO{}
+	if t.TeacherID.Valid {
+		vo.TeacherID = t.TeacherID.Int64
+	}
+	if t.UserID.Valid {
+		vo.UserID = t.UserID.Int64
+	}
+	vo.IsAvailable = t.IsAvailable.Bool
+	vo.Username = t.Username.String
+	if t.InstitutionID.Valid {
+		vo.InstitutionID = t.InstitutionID.Int64
+	}
+	vo.IsInstitutionAdmin = t.IsInstitutionAdmin.Bool
+	vo.Phone = t.Phone.String
+	return vo
+}
+
+// ToTeacherVOList 实体列表转 VO 列表
+func ToTeacherVOList(list []*entity.Teacher) []*TeacherVO {
+	result := make([]*TeacherVO, 0, len(list))
+	for _, t := range list {
+		if vo := ToTeacherVO(t); vo != nil {
+			result = append(result, vo)
+		}
+	}
+	return result
 }
