@@ -4,6 +4,7 @@ go 1.25
 
 require (
 	github.com/go-sql-driver/mysql v1.8.1
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/nacos-group/nacos-sdk-go/v2 v2.3.5
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/tjfoc/gmsm v1.4.1
