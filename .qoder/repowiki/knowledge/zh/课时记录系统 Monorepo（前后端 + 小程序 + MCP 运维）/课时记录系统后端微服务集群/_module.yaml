@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend_services
+title: 课时记录系统后端微服务集群
+scope:
+    - class_times_record_back/
+source_files: []
+depends_on: []
+related_to: []

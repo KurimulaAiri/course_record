@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: mobile_app
+title: 课时管理 KA 小程序（UniApp 多端应用）
+scope:
+    - class_times_record/
+source_files: []
+depends_on: []
+related_to: []

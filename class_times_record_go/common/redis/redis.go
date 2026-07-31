@@ -169,3 +169,48 @@ func MarkBindTokenUsed(client *redis.Client, token string) error {
 	// 已使用则删除（对齐 Java bindTokenCache.markUsed）
 	return client.Del(context.Background(), key).Err()
 }
+
+// ============================================================
+// 绑定码/订阅码缓存（用于 auth-service 绑定流程）
+// ============================================================
+
+// BindCodeTTL 绑定码/token 有效期（10 分钟）
+const BindCodeTTL = 10 * time.Minute
+
+// SetKeyValue 存储键值对到 Redis（通用方法，用于绑定码/token → studentID 映射）
+//
+// 参数：
+//   - client: Redis 客户端
+//   - key: Redis key（含前缀）
+//   - value: 存储值（studentID 字符串）
+//   - ttl: 过期时间
+func SetKeyValue(client *redis.Client, key, value string, ttl time.Duration) error {
+	return client.Set(context.Background(), key, value, ttl).Err()
+}
+
+// GetKeyValue 从 Redis 读取键值（通用方法）
+//
+// 参数：
+//   - client: Redis 客户端
+//   - key: Redis key（含前缀）
+//
+// 返回：值字符串，未找到返回空字符串和 nil error（通过 redis.Nil 判断）
+func GetKeyValue(client *redis.Client, key string) (string, error) {
+	return client.Get(context.Background(), key).Result()
+}
+
+// DeleteKey 删除 Redis key（标记绑定码/token 已使用）
+//
+// 参数：
+//   - client: Redis 客户端
+//   - key: Redis key（含前缀）
+func DeleteKey(client *redis.Client, key string) error {
+	return client.Del(context.Background(), key).Err()
+}
+
+// IsRedisNil 判断是否为 Redis key 不存在的错误
+//
+// 用途：区分 key 不存在（正常业务逻辑）和真正的 Redis 错误
+func IsRedisNil(err error) bool {
+	return err == redis.Nil
+}

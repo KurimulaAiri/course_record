@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/kurimula-airi/course_record_go/common/entity"
+	"github.com/pkg/errors"
 )
 
 // ============================================================
@@ -40,7 +41,7 @@ func (m *WxSubscribeRecordMapper) SelectByOpenIdAndTemplate(openID, templateID s
 		&r.UpdateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询订阅记录失败: %w", err)
@@ -136,7 +137,7 @@ func (m *WxStudentSubscribeMapper) SelectByOpenIdAndStudent(openID string, stude
 		&s.UpdateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询学生订阅关系失败: %w", err)
@@ -171,6 +172,24 @@ func (m *WxStudentSubscribeMapper) DeleteByOpenIdAndStudent(openID string, stude
 	_, err := m.db.Exec(query, openID, studentID)
 	if err != nil {
 		return fmt.Errorf("删除学生订阅关系失败: %w", err)
+	}
+	return nil
+}
+
+// UpdateByOpenIdAndStudent 按 openId+学生ID 更新订阅关系（isPrimary 和 bindMode）
+//
+// 用途：绑定时若已有订阅记录，更新 isPrimary 和 bindMode（可能从仅订阅升级为绑定账号）
+//
+// 参数：
+//   - openID: 微信 openId
+//   - studentID: 学生ID
+//   - isPrimary: 是否主要联系人
+//   - bindMode: 绑定模式（"subscribe"=仅订阅, "full"=绑定账号并订阅）
+func (m *WxStudentSubscribeMapper) UpdateByOpenIdAndStudent(openID string, studentID int64, isPrimary bool, bindMode string) error {
+	query := `UPDATE c_wx_student_subscribe SET is_primary = ?, bind_mode = ?, update_time = NOW() WHERE open_id = ? AND student_id = ?`
+	_, err := m.db.Exec(query, isPrimary, bindMode, openID, studentID)
+	if err != nil {
+		return fmt.Errorf("更新学生订阅关系失败: %w", err)
 	}
 	return nil
 }

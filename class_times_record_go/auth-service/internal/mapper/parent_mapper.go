@@ -3,6 +3,7 @@ package mapper
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/kurimula-airi/course_record_go/common/entity"
@@ -45,7 +46,7 @@ func (m *ParentMapper) SelectByUserID(userID int64) (*entity.Parent, error) {
 		&p.UpdateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询家长失败: %w", err)
@@ -70,7 +71,7 @@ func (m *ParentMapper) SelectByID(parentID int64) (*entity.Parent, error) {
 		&p.UpdateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询家长失败: %w", err)
@@ -289,6 +290,64 @@ func (m *ParentStudentMapper) SelectByStudentID(studentID int64) ([]*entity.Pare
 		list = append(list, ps)
 	}
 	return list, nil
+}
+
+// SelectByStudentIDAndIsPrimary 按学生ID+是否主联系人查关联记录
+//
+// 用途：查询绑定信息时，按 isPrimary 匹配占位家长记录（教师创建学生时预填的家长）
+//
+// 参数：
+//   - studentID: 学生ID
+//   - isPrimary: 是否主联系人
+//
+// 返回：关联记录指针，未找到返回 nil
+func (m *ParentStudentMapper) SelectByStudentIDAndIsPrimary(studentID int64, isPrimary bool) (*entity.ParentStudent, error) {
+	query := `SELECT id, parent_id, student_id, is_primary, relation, create_time, update_time FROM c_parent_student WHERE student_id = ? AND is_primary = ? LIMIT 1`
+	row := m.db.QueryRow(query, studentID, isPrimary)
+
+	ps := &entity.ParentStudent{}
+	err := row.Scan(
+		&ps.ID,
+		&ps.ParentID,
+		&ps.StudentID,
+		&ps.IsPrimary,
+		&ps.Relation,
+		&ps.CreateTime,
+		&ps.UpdateTime,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("查询家长学生关联失败: %w", err)
+	}
+	return ps, nil
+}
+
+// HasParentWithAccount 检查学生是否已有任意家长账号（关联了 last_login_role=3 的平台记录）
+//
+// 用途：CheckBindStatus 中判断 hasAccount 字段
+// 通过 c_parent_student JOIN c_parent JOIN c_user_platform 三表关联查询
+//
+// 参数：
+//   - studentID: 学生ID
+//
+// 返回：存在返回 true，否则返回 false
+func (m *ParentStudentMapper) HasParentWithAccount(studentID int64) (bool, error) {
+	// 三表 JOIN：parent_student → parent → user_platform
+	// 条件：student_id 匹配，last_login_role=3（家长角色），平台记录可用
+	query := `
+		SELECT COUNT(1) FROM c_parent_student ps
+		INNER JOIN c_parent p ON ps.parent_id = p.id
+		INNER JOIN c_user_platform up ON p.user_id = up.user_id
+		WHERE ps.student_id = ? AND up.last_login_role = 3 AND up.is_available = 1
+	`
+	var count int
+	err := m.db.QueryRow(query, studentID).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("查询学生家长账号失败: %w", err)
+	}
+	return count > 0, nil
 }
 
 // Insert 新增家长-学生关联

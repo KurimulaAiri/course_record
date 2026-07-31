@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"github.com/kurimula-airi/course_record_go/common/entity"
+	"github.com/pkg/errors"
 )
 
 // ============================================================
@@ -51,13 +52,13 @@ func NewUserMapper(db *sql.DB) *UserMapper {
 // 返回：用户实体指针，未找到返回 nil
 func (m *UserMapper) SelectUserByPlatformOpenid(platform, openId string) (*entity.User, error) {
 	query := `
-		SELECT u.id, u.institution_id, u.create_time, u.update_time
-		FROM c_user u
-		INNER JOIN c_user_platform up ON u.id = up.user_id
-		WHERE up.platform = ? AND up.open_id = ? AND up.is_available = 1
-		ORDER BY u.id ASC
-		LIMIT 1
-	`
+			SELECT u.id, u.institution_id, u.create_time, u.update_time
+			FROM c_user u
+			INNER JOIN c_user_platform up ON u.id = up.user_id
+			WHERE up.platform = ? AND up.open_id = ? AND up.is_available = 1
+			ORDER BY u.id
+			LIMIT 1
+		`
 	row := m.db.QueryRow(query, platform, openId)
 
 	user := &entity.User{}
@@ -68,7 +69,7 @@ func (m *UserMapper) SelectUserByPlatformOpenid(platform, openId string) (*entit
 		&user.UpdateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询用户失败: %w", err)
@@ -89,14 +90,14 @@ func (m *UserMapper) SelectUserByPlatformOpenid(platform, openId string) (*entit
 // 返回：用户实体指针，未找到返回 nil
 func (m *UserMapper) SelectUserByPlatformOpenidAndInstitution(platform, openId string, institutionId int64) (*entity.User, error) {
 	query := `
-		SELECT u.id, u.institution_id, u.create_time, u.update_time
-		FROM c_user u
-		INNER JOIN c_user_platform up ON u.id = up.user_id
-		WHERE up.platform = ? AND up.open_id = ? AND up.is_available = 1
-		  AND u.institution_id = ?
-		ORDER BY u.id ASC
-		LIMIT 1
-	`
+			SELECT u.id, u.institution_id, u.create_time, u.update_time
+			FROM c_user u
+			INNER JOIN c_user_platform up ON u.id = up.user_id
+			WHERE up.platform = ? AND up.open_id = ? AND up.is_available = 1
+			  AND u.institution_id = ?
+			ORDER BY u.id
+			LIMIT 1
+		`
 	row := m.db.QueryRow(query, platform, openId, institutionId)
 
 	user := &entity.User{}
@@ -107,7 +108,7 @@ func (m *UserMapper) SelectUserByPlatformOpenidAndInstitution(platform, openId s
 		&user.UpdateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询用户失败: %w", err)
@@ -128,7 +129,7 @@ func (m *UserMapper) SelectByID(id int64) (*entity.User, error) {
 		&user.UpdateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询用户失败: %w", err)

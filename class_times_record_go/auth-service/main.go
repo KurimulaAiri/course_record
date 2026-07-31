@@ -8,6 +8,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ import (
 	"github.com/kurimula-airi/course_record_go/common/db"
 	"github.com/kurimula-airi/course_record_go/common/jwt"
 	commonredis "github.com/kurimula-airi/course_record_go/common/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 // main auth-service 启动入口
@@ -48,7 +50,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("❌ MySQL 连接失败: %v", err)
 	}
-	defer database.Close()
+	defer func(database *sql.DB) {
+		err := database.Close()
+		if err != nil {
+			log.Printf("❌ MySQL 连接关闭失败: %v", err)
+		}
+	}(database)
 
 	// 2. 加载 Redis 配置（对齐 Java common-redis.yaml）
 	redisCfg := commonredis.DefaultConfig()
@@ -60,13 +67,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("❌ Redis 连接失败: %v", err)
 	}
-	defer redisClient.Close()
+	defer func(redisClient *redis.Client) {
+		err := redisClient.Close()
+		if err != nil {
+			log.Printf("❌ Redis 连接关闭失败: %v", err)
+		}
+	}(redisClient)
 
 	// 3. 初始化 JWT 工具（对齐 Java JwtUtils，密钥与 Java 一致）
 	jwtUtils := jwt.NewUtils(
 		"shiroko_project_secret_key_at_least_32_chars_long",
-		5*60*1000,              // Access Token 5 分钟
-		7*24*60*60*1000,        // Refresh Token 7 天
+		5*60*1000,       // Access Token 5 分钟
+		7*24*60*60*1000, // Refresh Token 7 天
 	)
 
 	// 4. 初始化各 Mapper（对齐 Java @Autowired 注入）
@@ -74,18 +86,27 @@ func main() {
 	userAuthMapper := mapper.NewUserAuthMapper(database)
 	userPlatformMapper := mapper.NewUserPlatformMapper(database)
 	parentMapper := mapper.NewParentMapper(database)
+	// 教师表 Mapper（用于登录后查询教师身份信息，构造 UserVO.IdentityInfo）
+	teacherMapper := mapper.NewTeacherMapper(database)
+	// 管理员表 Mapper（用于登录后查询管理员信息，构造 UserVO.Admin）
+	adminMapper := mapper.NewAdminMapper(database)
 	institutionMapper := mapper.NewInstitutionMapper(database)
 	studentMapper := mapper.NewStudentMapper(database)
 	parentStudentMapper := mapper.NewParentStudentMapper(database)
 	wxSubscribeRecordMapper := mapper.NewWxSubscribeRecordMapper(database)
 	wxStudentSubscribeMapper := mapper.NewWxStudentSubscribeMapper(database)
+	// 菜单表 Mapper（用于按角色查询小程序端菜单列表）
+	menuMapper := mapper.NewMenuMapper(database)
 
 	// 5. 初始化 AuthService（对齐 Java AuthServiceImpl）
+	// 注意：teacherMapper 和 adminMapper 注入顺序需与 NewAuthService 参数顺序一致
 	authService := service.NewAuthService(
 		userMapper,
 		userAuthMapper,
 		userPlatformMapper,
 		parentMapper,
+		teacherMapper,
+		adminMapper,
 		institutionMapper,
 		studentMapper,
 		parentStudentMapper,
@@ -102,10 +123,19 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService)
 	authHandler.RegisterRoutes(mux)
 
+	// 注册 menu 路由（对齐 Java MenuController @RequestMapping("/menu")）
+	// 前端请求 /auth/menu/get_menu_by_role → Gateway StripPrefix=1 → /menu/get_menu_by_role
+	menuService := service.NewMenuService(menuMapper)
+	menuHandler := handler.NewMenuHandler(menuService)
+	menuHandler.RegisterRoutes(mux)
+
 	// 健康检查接口（便于运维监控）
 	mux.HandleFunc("/auth/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok","service":"auth-service"}`))
+		_, err := w.Write([]byte(`{"status":"ok","service":"auth-service"}`))
+		if err != nil {
+			return
+		}
 	})
 
 	// 7. 应用中间件

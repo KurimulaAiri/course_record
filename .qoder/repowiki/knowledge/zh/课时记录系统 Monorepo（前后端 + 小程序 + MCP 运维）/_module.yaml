@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: ""
+title: 课时记录系统 Monorepo（前后端 + 小程序 + MCP 运维）
+scope:
+    - .gitignore
+    - .gitmodules
+    - .qoderignore
+    - CLAUDE.md
+source_files: []
+depends_on: []
+related_to: []

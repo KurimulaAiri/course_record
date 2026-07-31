@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: mcp_server
+title: 本地运维 MCP Server（Jenkins/Nacos/Sentinel/Docker/DB）
+scope:
+    - course_record_mcp_server/
+source_files: []
+depends_on: []
+related_to: []

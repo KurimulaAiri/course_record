@@ -1,11 +1,11 @@
-﻿// Package gateway Go Gateway 主程序
+﻿// Package internal Go Gateway 主程序
 //
 // 替代 Java Spring Cloud Gateway，职责：
-//   1. 路由分发：/auth/** → auth-service, /biz/** → business-service, /admin/** → admin-service
-//   2. JWT 校验：验签 + 验过期（HS256，与 Java JwtUtils 互通）
-//   3. Redis 黑名单：查询 cr:token:blacklist:{token}（与 Java TokenBlacklistService 互通）
-//   4. 请求头注入：X-User-Id / X-User-Role / X-User-OpenId（与 Java JwtAuthFilter 一致）
-//   5. StripPrefix=1：转发前去除第一层路径前缀
+//  1. 路由分发：/auth/** → auth-service, /biz/** → business-service, /admin/** → admin-service
+//  2. JWT 校验：验签 + 验过期（HS256，与 Java JwtUtils 互通）
+//  3. Redis 黑名单：查询 cr:token:blacklist:{token}（与 Java TokenBlacklistService 互通）
+//  4. 请求头注入：X-User-Id / X-User-Role / X-User-OpenId（与 Java JwtAuthFilter 一致）
+//  5. StripPrefix=1：转发前去除第一层路径前缀
 //
 // 性能对比：
 //   - Java Gateway: 300-500MB 内存，启动 8-15s
@@ -149,12 +149,12 @@ func NewGateway(cfg *Config) *Gateway {
 
 // ServeHTTP 实现 http.Handler 接口
 // 这是 Gateway 的核心入口，每个请求都会经过：
-//   1. 路由匹配
-//   2. 公开路径检查
-//   3. JWT 校验
-//   4. Redis 黑名单检查
-//   5. 请求头注入
-//   6. 反向代理转发
+//  1. 路由匹配
+//  2. 公开路径检查
+//  3. JWT 校验
+//  4. Redis 黑名单检查
+//  5. 请求头注入
+//  6. 反向代理转发
 func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 1. 路由匹配：找到匹配的前缀
 	prefix := g.matchRoute(r.URL.Path)

@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/kurimula-airi/course_record_go/common/entity"
+	"github.com/pkg/errors"
 )
 
 // UserPlatformMapper 用户平台表 c_user_platform 的 Mapper
@@ -31,12 +32,12 @@ func NewUserPlatformMapper(db *sql.DB) *UserPlatformMapper {
 // 返回：平台记录，未找到返回 nil
 func (m *UserPlatformMapper) SelectByOpenIdAndPlatform(openId, platform string) (*entity.UserPlatform, error) {
 	query := `
-		SELECT id, user_id, open_id, union_id, last_login_time, last_login_role, platform, is_available, create_time
-		FROM c_user_platform
-		WHERE open_id = ? AND platform = ? AND is_available = 1
-		ORDER BY id ASC
-		LIMIT 1
-	`
+			SELECT id, user_id, open_id, union_id, last_login_time, last_login_role, platform, is_available, create_time
+			FROM c_user_platform
+			WHERE open_id = ? AND platform = ? AND is_available = 1
+			ORDER BY id
+			LIMIT 1
+		`
 	row := m.db.QueryRow(query, openId, platform)
 
 	p := &entity.UserPlatform{}
@@ -52,7 +53,7 @@ func (m *UserPlatformMapper) SelectByOpenIdAndPlatform(openId, platform string) 
 		&p.CreateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询平台记录失败: %w", err)
@@ -72,12 +73,12 @@ func (m *UserPlatformMapper) SelectByOpenIdAndPlatform(openId, platform string) 
 // 返回：平台记录，未找到返回 nil
 func (m *UserPlatformMapper) SelectByOpenIdPlatformAndRole(openId, platform string, lastLoginRole int64) (*entity.UserPlatform, error) {
 	query := `
-		SELECT id, user_id, open_id, union_id, last_login_time, last_login_role, platform, is_available, create_time
-		FROM c_user_platform
-		WHERE open_id = ? AND platform = ? AND is_available = 1 AND last_login_role = ?
-		ORDER BY id ASC
-		LIMIT 1
-	`
+			SELECT id, user_id, open_id, union_id, last_login_time, last_login_role, platform, is_available, create_time
+			FROM c_user_platform
+			WHERE open_id = ? AND platform = ? AND is_available = 1 AND last_login_role = ?
+			ORDER BY id
+			LIMIT 1
+		`
 	row := m.db.QueryRow(query, openId, platform, lastLoginRole)
 
 	p := &entity.UserPlatform{}
@@ -93,7 +94,7 @@ func (m *UserPlatformMapper) SelectByOpenIdPlatformAndRole(openId, platform stri
 		&p.CreateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询平台记录失败: %w", err)
@@ -125,7 +126,7 @@ func (m *UserPlatformMapper) SelectByUserIDAndPlatform(userID int64, platform st
 		&p.CreateTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询平台记录失败: %w", err)

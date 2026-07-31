@@ -1,0 +1,59 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: master
+nodes_managed: true
+exported_at: "2026-07-15T03:38:38Z"
+modules:
+    "":
+        dir_name: 课时记录系统 Monorepo（前后端 + 小程序 + MCP 运维）
+        title: 课时记录系统 Monorepo（前后端 + 小程序 + MCP 运维）
+        scope:
+            - .gitignore
+            - .gitmodules
+            - .qoderignore
+            - CLAUDE.md
+        source_files: []
+        children:
+            - admin_frontend
+            - backend_services
+            - mcp_server
+            - mobile_app
+        depends_on: []
+        related_to: []
+    admin_frontend:
+        dir_name: 课程记录后台管理前端
+        title: 课程记录后台管理前端
+        scope:
+            - class_record_admin_front/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend_services:
+        dir_name: 课时记录系统后端微服务集群
+        title: 课时记录系统后端微服务集群
+        scope:
+            - class_times_record_back/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    mcp_server:
+        dir_name: 本地运维 MCP Server（Jenkins_Nacos_Sentinel_Docker_DB）
+        title: 本地运维 MCP Server（Jenkins/Nacos/Sentinel/Docker/DB）
+        scope:
+            - course_record_mcp_server/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    mobile_app:
+        dir_name: 课时管理 KA 小程序（UniApp 多端应用）
+        title: 课时管理 KA 小程序（UniApp 多端应用）
+        scope:
+            - class_times_record/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/kurimula-airi/course_record_go/common/entity"
+	"github.com/pkg/errors"
 )
 
 // UserAuthMapper 用户认证表 c_user_auth 的 Mapper
@@ -50,7 +51,7 @@ func (m *UserAuthMapper) SelectAuthByAccountAndInstitution(account string, roleI
 		&auth.LastLoginTime,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("查询认证记录失败: %w", err)
