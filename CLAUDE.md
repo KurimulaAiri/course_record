@@ -140,6 +140,65 @@ sys_user N──N sys_role (sys_user_role)   sys_role N──N sys_menu (sys_rol
 
 ---
 
+## Go Backend Nacos Integration
+
+Go 后端（`class_times_record_back/`，`feat/go-migration-poc` 分支）已集成 Nacos 配置中心和服务发现，对齐 Java 侧 Spring Cloud Alibaba。
+
+### 架构
+
+- **配置中心**：从 Nacos namespace `course-record` 拉取 yaml 配置（common-db.yaml、common-redis.yaml、cr-{service}.yaml）
+- **服务发现**：4 个 Go 服务（cr-gateway/cr-auth-service/cr-business-service/cr-admin-service）向 Nacos 注册临时实例
+- **Gateway lb:// 路由**：支持 `lb://{service-name}` 格式，通过 Nacos 服务发现解析实例地址
+
+### 配置优先级
+
+1. 环境变量（最高，部署时注入敏感凭证）
+2. Nacos 配置中心（运行时动态配置）
+3. 代码默认值（最低，本地开发兜底）
+
+### 环境变量
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| NACOS_SERVER_ADDR | nacos.kurimula-airi.top:8848 | Nacos 服务器地址 |
+| NACOS_NAMESPACE | course-record | 命名空间 ID |
+| NACOS_GROUP | DEFAULT_GROUP | 配置分组 |
+| NACOS_SCHEME | http | 通信协议 |
+| NACOS_REGISTER_IP | 自动识别 | 服务注册 IP |
+| GATEWAY_PROFILE | （空） | Gateway 模式（dev=直连） |
+
+### Nacos 配置文件
+
+| Data ID | 用途 | 消费方 |
+|---------|------|--------|
+| common-db.yaml | 数据库配置 | 所有服务 |
+| common-redis.yaml | Redis 配置 | 所有服务 |
+| cr-gateway.yaml | Gateway 路由+JWT | gateway |
+| cr-auth-service.yaml | SM2+微信+JWT | auth-service |
+| cr-business-service.yaml | SM2+JWT | business-service |
+| cr-admin-service.yaml | SM2+JWT | admin-service |
+
+### 降级策略
+
+Nacos 不可达时，各服务降级到环境变量 + 代码默认值，不阻塞启动。Gateway 在 Nacos 不可达时，lb:// 路由返回 503，http:// 直连路由正常工作。
+
+### 配置热更新
+
+- **Gateway 路由表**：监听 `cr-gateway.yaml` 变更，原子替换路由表（sync.RWMutex 保护），清空实例缓存
+- **DB/Redis 配置**：监听变更，记录警告日志提示需重启（不重建连接池，避免运行时安全风险）
+
+### Go 后端代码组织与重要约定
+
+> 详见 `class_times_record_back/CLAUDE.md`，以下是关键要点：
+
+- **按业务对象拆分**：超大文件（>1000 行）已按业务对象拆分到独立文件（如 `admin_business_mapper.go` → `institution_mapper.go`/`student_mapper.go`/...），主文件仅保留公共骨架
+- **请求日志中间件**：`common/middleware/logging.go` 作为最外层中间件接入 auth/business/admin 三个 net/http 服务
+- **FlexibleInt64 类型**：`common/types/flexible.go` 兼容前端 `number | string` 联合类型，列表查询的状态字段统一使用，`0` 表示不过滤
+- **管理端密码哈希**：sys_user 表使用 SM3+salt 哈希存储（64 位 hex），非 BCrypt
+- **微信配置加载优先级**：环境变量 `WX_APP_ID`/`WX_APP_SECRET` > Nacos `cr-business-service.yaml` 的 `uni-app.wx` 路径 > 空值
+
+---
+
 ## Admin Frontend
 
 **Stack**: Vue 3 + Element Plus + Vite 8 + TypeScript (strict) + Pinia + Vue Router 5 + Axios + SCSS + pnpm
