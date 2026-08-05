@@ -95,15 +95,20 @@ interface StudentResponse {
 
 ## 本地开发环境
 
-### Java 环境
-- 项目要求 JDK 21（Spring Boot 4.0.4 依赖），本地路径 `D:\env\java\jdk-21.0.8.9-hotspot`
-- 编译时需设置环境变量 `JAVA_HOME=D:\env\java\jdk-21.0.8.9-hotspot`
+### Go 后端环境
+- 项目后端已迁移到 Go 语言（位于 `class_times_record_back/`）
+- 编译：`cd class_times_record_back && go build ./...`
+- 配置加载：所有配置从 yml 文件加载（通过 `APP_ENV` 选择 `config.dev.yml`/`config.prod.yml`，或通过 `CONFIG_PATH` 指定路径）
 
 ### Gateway 本地开发
-- Gateway 默认使用 Nacos 的 `lb://` 路由（负载均衡到所有注册实例）
-- 本地开发必须激活 dev profile：`-Dspring.profiles.active=dev`，否则会请求远程服务器
-- dev profile 会用 localhost 直连路由覆盖 Nacos 的 `lb://` 路由配置
-- IDEA 运行配置 `.run/GatewayApplication.run.xml` 已预设该参数
+- Gateway 路由 URI 从 `config.dev.yml` 文件加载（`gateway.auth_uri`/`gateway.business_uri`/`gateway.admin_uri`）
+- 开发环境配置为 `http://localhost:{port}` 直连格式，无需 Nacos 也可运行
+- 生产环境可配置为 `lb://{service-name}` 服务发现格式（需 Nacos 可达）
+- Nacos 服务注册保留：启动时注册实例，优雅关闭时注销（对齐 Java @EnableDiscoveryClient）
+
+### Java 环境（已废弃，仅保留参考）
+- 项目原要求 JDK 21（Spring Boot 4.0.4 依赖），本地路径 `D:\env\java\jdk-21.0.8.9-hotspot`
+- 后端已迁移到 Go，Java 代码仅保留参考，不再维护
 
 ### 小程序前端
 - 开发模式 (`NODE_ENV=development`) 使用 `http://localhost:9999`（本地 Gateway）

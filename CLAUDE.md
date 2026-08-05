@@ -140,52 +140,109 @@ sys_user N──N sys_role (sys_user_role)   sys_role N──N sys_menu (sys_rol
 
 ---
 
-## Go Backend Nacos Integration
+## Go Backend Configuration
 
-Go 后端（`class_times_record_back/`，`feat/go-migration-poc` 分支）已集成 Nacos 配置中心和服务发现，对齐 Java 侧 Spring Cloud Alibaba。
+Go 后端（`class_times_record_back/`）采用 **yml 配置文件 + Nacos 服务注册** 的混合架构：
+- **配置加载**：所有业务配置（DB/Redis/JWT/SM2/微信/路由表）从 yml 配置文件加载，**不再依赖 Nacos 配置中心**
+- **服务注册与发现**：保留 Nacos 服务注册，4 个 Go 服务（cr-gateway/cr-auth-service/cr-business-service/cr-admin-service）向 Nacos 注册临时实例
+- **Gateway lb:// 路由**：支持 `lb://{service-name}` 格式，通过 Nacos 服务发现解析实例地址（多机部署时使用）
 
-### 架构
+### 配置加载策略
 
-- **配置中心**：从 Nacos namespace `course-record` 拉取 yaml 配置（common-db.yaml、common-redis.yaml、cr-{service}.yaml）
-- **服务发现**：4 个 Go 服务（cr-gateway/cr-auth-service/cr-business-service/cr-admin-service）向 Nacos 注册临时实例
-- **Gateway lb:// 路由**：支持 `lb://{service-name}` 格式，通过 Nacos 服务发现解析实例地址
-
-### 配置优先级
-
-1. 环境变量（最高，部署时注入敏感凭证）
-2. Nacos 配置中心（运行时动态配置）
+**配置来源优先级**（从高到低）：
+1. 真实环境变量（部署时注入敏感凭证，优先级最高，不覆盖已存在的值）
+2. yml 配置文件（由 `common/config/yml_loader.go` 加载到环境变量）
 3. 代码默认值（最低，本地开发兜底）
 
-### 环境变量
+**环境分离机制**（通过 `APP_ENV` 环境变量选择）：
+- `APP_ENV=dev` → 加载 `config.dev.yml`（开发环境，公网 IP 连接远程服务）
+- `APP_ENV=prod` → 加载 `config.prod.yml`（生产环境，localhost 连接本地服务）
+- 未设置 `APP_ENV` → 默认按 `dev` 处理，加载 `config.dev.yml`（开箱即用，本地开发无需显式设置）
+- `CONFIG_PATH` 环境变量可显式指定配置文件路径（最高优先级，覆盖 `APP_ENV` 选择）
+
+### 配置文件
+
+| 文件 | 用途 | git 状态 |
+|------|------|----------|
+| `config.example.yml` | 配置模板（含所有配置项说明） | 已提交 |
+| `config.dev.yml` | 开发环境配置（公网 IP） | .gitignore 忽略 |
+| `config.prod.yml` | 生产环境配置（localhost） | .gitignore 忽略 |
+
+### 主要环境变量
 
 | 变量名 | 默认值 | 说明 |
 |--------|--------|------|
-| NACOS_SERVER_ADDR | nacos.kurimula-airi.top:8848 | Nacos 服务器地址 |
-| NACOS_NAMESPACE | course-record | 命名空间 ID |
-| NACOS_GROUP | DEFAULT_GROUP | 配置分组 |
-| NACOS_SCHEME | http | 通信协议 |
-| NACOS_REGISTER_IP | 自动识别 | 服务注册 IP |
-| GATEWAY_PROFILE | （空） | Gateway 模式（dev=直连） |
+| `APP_ENV` | `dev` | 环境标识（dev/prod），决定加载哪个 yml 文件；未设置时默认按 `dev` 处理 |
+| `CONFIG_PATH` | （空） | 显式指定 yml 配置文件路径（最高优先级，覆盖 `APP_ENV` 选择） |
+| `DB_HOST` | 121.196.229.10 | MySQL 主机地址 |
+| `DB_PORT` | 3306 | MySQL 端口 |
+| `DB_NAME` | class_times_record | 数据库名 |
+| `DB_USER` | class_times_record | 数据库用户名 |
+| `DB_PASSWORD` | （无默认） | 数据库密码（必填） |
+| `REDIS_ADDR` | 121.196.229.10:6379 | Redis 地址 |
+| `REDIS_PASSWORD` | （无默认） | Redis 密码（必填） |
+| `REDIS_DB` | 0 | Redis DB 编号 |
+| `SM2_PRIVATE_KEY` | （代码默认） | auth/business 共用 SM2 私钥 |
+| `SM2_PRIVATE_KEY_ADMIN` | （代码默认） | admin-service 专用 SM2 私钥 |
+| `WX_APP_ID` | （空） | 微信小程序 AppID |
+| `WX_APP_SECRET` | （空） | 微信小程序 AppSecret |
+| `WX_ENV_VERSION` | release | 微信小程序环境版本 |
+| `GATEWAY_AUTH_URI` | http://localhost:10002 | Gateway → auth-service 路由 URI |
+| `GATEWAY_BUSINESS_URI` | http://localhost:10001 | Gateway → business-service 路由 URI |
+| `GATEWAY_ADMIN_URI` | http://localhost:10003 | Gateway → admin-service 路由 URI |
+| `GATEWAY_PORT` | 9999 | Gateway 监听端口 |
+| `AUTH_PORT` | 10002 | auth-service 监听端口 |
+| `BIZ_PORT` | 10001 | business-service 监听端口 |
+| `ADMIN_PORT` | 10003 | admin-service 监听端口 |
 
-### Nacos 配置文件
+### Gateway 路由 URI 格式
 
-| Data ID | 用途 | 消费方 |
-|---------|------|--------|
-| common-db.yaml | 数据库配置 | 所有服务 |
-| common-redis.yaml | Redis 配置 | 所有服务 |
-| cr-gateway.yaml | Gateway 路由+JWT | gateway |
-| cr-auth-service.yaml | SM2+微信+JWT | auth-service |
-| cr-business-service.yaml | SM2+JWT | business-service |
-| cr-admin-service.yaml | SM2+JWT | admin-service |
+路由 URI 支持两种格式，通过环境变量配置：
+
+1. **http:// 直连格式**（开发环境/单机部署）：
+   ```
+   GATEWAY_AUTH_URI=http://localhost:10002
+   GATEWAY_BUSINESS_URI=http://localhost:10001
+   GATEWAY_ADMIN_URI=http://localhost:10003
+   ```
+   性能最优，无需 Nacos 也可运行。
+
+2. **lb:// 服务发现格式**（多机部署/K8s）：
+   ```
+   GATEWAY_AUTH_URI=lb://cr-auth-service
+   GATEWAY_BUSINESS_URI=lb://cr-business-service
+   GATEWAY_ADMIN_URI=lb://cr-admin-service
+   ```
+   需 Nacos 可达，Gateway 通过服务发现动态解析实例地址。
+
+### Nacos 服务注册与发现（保留）
+
+**保留功能**：
+- 服务注册：各服务启动时向 Nacos 注册临时实例（Ephemeral=true，SDK 自动心跳保活）
+- 服务注销：优雅关闭时注销实例（避免流量打到已关闭的服务）
+- lb:// 路由解析：Gateway 通过 Nacos 服务发现动态解析实例地址（10 秒本地缓存）
+
+**移除功能**：
+- 不再从 Nacos 加载配置文件（common-db.yaml、cr-{service}.yaml 等）
+- 不再监听 Nacos 配置变更（路由表热更新改为重启服务）
+
+**Nacos 连接环境变量**：
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `NACOS_SERVER_ADDR` | nacos.kurimula-airi.top:8848 | Nacos 服务器地址 |
+| `NACOS_NAMESPACE` | course-record | 命名空间 ID |
+| `NACOS_GROUP` | DEFAULT_GROUP | 配置分组 |
+| `NACOS_SCHEME` | http | 通信协议 |
+| `NACOS_REGISTER_IP` | 自动识别 | 服务注册 IP（容器部署时建议显式指定） |
 
 ### 降级策略
 
-Nacos 不可达时，各服务降级到环境变量 + 代码默认值，不阻塞启动。Gateway 在 Nacos 不可达时，lb:// 路由返回 503，http:// 直连路由正常工作。
-
-### 配置热更新
-
-- **Gateway 路由表**：监听 `cr-gateway.yaml` 变更，原子替换路由表（sync.RWMutex 保护），清空实例缓存
-- **DB/Redis 配置**：监听变更，记录警告日志提示需重启（不重建连接池，避免运行时安全风险）
+Nacos 不可达时：
+- 各服务降级到环境变量配置，不阻塞启动
+- 服务注册跳过（不影响 http:// 直连路由）
+- Gateway 的 lb:// 路由返回 503，http:// 直连路由正常工作
+- 各服务通过 `nacosClient = nil` 判断跳过 Nacos 相关操作
 
 ### Go 后端代码组织与重要约定
 
@@ -195,7 +252,8 @@ Nacos 不可达时，各服务降级到环境变量 + 代码默认值，不阻�
 - **请求日志中间件**：`common/middleware/logging.go` 作为最外层中间件接入 auth/business/admin 三个 net/http 服务
 - **FlexibleInt64 类型**：`common/types/flexible.go` 兼容前端 `number | string` 联合类型，列表查询的状态字段统一使用，`0` 表示不过滤
 - **管理端密码哈希**：sys_user 表使用 SM3+salt 哈希存储（64 位 hex），非 BCrypt
-- **微信配置加载优先级**：环境变量 `WX_APP_ID`/`WX_APP_SECRET` > Nacos `cr-business-service.yaml` 的 `uni-app.wx` 路径 > 空值
+- **微信配置加载优先级**：环境变量 `WX_APP_ID`/`WX_APP_SECRET`（最高） > yml 配置文件 > 空值（功能不可用）
+- **配置加载入口**：各服务 `main.go` 首先调用 `config.LoadYML()` 加载 yml 配置文件，然后再读取环境变量初始化配置
 
 ---
 
