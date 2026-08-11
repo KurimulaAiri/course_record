@@ -31,7 +31,11 @@
       "Bash(mysql *)",
       "Bash(mysqldump *)",
       "Bash(bash .temp/db-sync.sh *)",
-      "Bash(C:/Program Files/MySQL/MySQL Server 8.0/bin/mysql *)"
+      "Bash(C:/Program Files/MySQL/MySQL Server 8.0/bin/mysql *)",
+      "Bash(xxd \"D:/proj/kurimula-airi/course_record/class_times_record_back/business-service/internal/service/student_service.go\")",
+      "Bash(xxd)",
+      "Bash(python3 -c ' *)",
+      "Bash(go build *)"
     ]
   }
 }
