@@ -35,7 +35,8 @@
       "Bash(xxd \"D:/proj/kurimula-airi/course_record/class_times_record_back/business-service/internal/service/student_service.go\")",
       "Bash(xxd)",
       "Bash(python3 -c ' *)",
-      "Bash(go build *)"
+      "Bash(go build *)",
+      "Bash(go vet *)"
     ]
   }
 }
