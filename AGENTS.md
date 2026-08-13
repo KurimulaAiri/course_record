@@ -79,6 +79,8 @@ Database: `class_times_record` (utf8mb4) on `121.196.229.10:3306`. Access via MC
 
 **Table naming convention**: Business tables use `c_` prefix (e.g., `c_institution`, `c_student`, `c_teacher`, `c_course`, `c_class`, `c_user`, `c_user_auth`, `c_user_platform`, `c_parent`, `c_parent_student`, `c_class_student`, `c_class_teacher`, `c_class_schedule`, `c_course_record`, `c_record`, `c_permission`, `c_permission_record`, `c_menu`, `c_admin`, `c_wx_subscribe_record`, `c_wx_student_subscribe`, `c_subscription_plan`). Admin/system tables use `sys_` prefix (e.g., `sys_user`, `sys_role`, `sys_menu`, `sys_role_menu`, `sys_user_role`, `sys_operation_log`, `sys_config`).
 
+**Soft delete (is_delete)**: Core business tables use soft delete — `c_institution`, `c_teacher`, `c_student`, `c_parent`, `c_course`, `c_class`, `c_class_schedule`, `c_subscription_plan`, `c_course_record`, `c_record` all have `is_delete` column (`tinyint(1) NOT NULL DEFAULT 0`). All main-table queries in business/admin/auth services filter `is_delete = 0`. `is_available` (disable) and `is_delete` (archive) are independent. Link tables & log tables use hard delete. `sys_user`/`sys_role` use `is_deleted`.
+
 ### Backend Conventions
 
 **DTO/VO directory**: One subfolder per entity — `dto/{entity}/`, `vo/{entity}/`. Admin DTOs: `dto/admin/{entity}/`, prefixed `Admin`.
