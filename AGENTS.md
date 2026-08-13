@@ -50,6 +50,8 @@ All requests enter via Gateway (`/auth/**` → auth-service, `/biz/**` → busin
 
 Production: `lb://{service-name}`, DEV: `http://localhost:{port}`. Config in Nacos `cr-gateway.yaml` (prod) and `gateway/src/main/resources/application-dev.yml` (local).
 
+**CORS**: Go Gateway handles browser CORS at the top of `ServeHTTP` (`gateway/internal/cors.go`) — OPTIONS preflight for whitelisted origins returns 204 + CORS headers; non-whitelisted origins get no CORS headers. Origins via env `GATEWAY_CORS_ORIGINS` (comma-separated), defaults: `https://dashboard.course-record.kurimula-airi.top,http://localhost:5173,http://localhost:4173`.
+
 ### Security
 
 **Mini Program auth flow**: SM2 encrypt password (cipherMode=1, "04" prefix) → backend SM2 decrypt → SM3+salt hash for storage. JWT (5-min expiry, HMAC-SHA256). Every request signed with SM3 (`x-sign`, `x-timestamp`, `x-nonce` headers). 401 triggers silent refresh. AuthServiceImpl 中 `userPlatformMapper.selectOne` 按 `lastLoginRole=3` 限定家长角色查询。
