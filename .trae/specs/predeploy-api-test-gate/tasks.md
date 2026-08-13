@@ -48,11 +48,11 @@
   - [x] 本地 `go test ./poc/predeploy/...` 通过（未配置测试账号时按预期跳过登录用例）
   - [x] `bash deploy.sh test all`：宿主机环境不可用，已验证脚本语法（bash -n）+ 命令分发逻辑 + test_services 完整流程实现
 
-- [ ] Task 8: 文档更新与提交推送
-  - [ ] 更新 `class_times_record_back/CLAUDE.md`（部署流程：deploy.sh test 子命令、Jenkins Pre-Deploy Test 阶段、测试账号配置说明）
-  - [ ] 更新根目录 `AGENTS.md`（如涉及部署/测试说明）
-  - [ ] 提交并推送 `class_times_record_back`（master）
-  - [ ] 同步根仓库子模块指针并推送
+- [x] Task 8: 文档更新与提交推送
+  - [x] 更新 `class_times_record_back/CLAUDE.md`（部署流程：deploy.sh test 子命令、Jenkins Pre-Deploy Test 阶段、测试账号配置说明）
+  - [x] 更新根目录 `AGENTS.md`（如涉及部署/测试说明）
+  - [x] 提交并推送 `class_times_record_back`（master，commit e7913f0）
+  - [x] 同步根仓库子模块指针并推送（master，commit 4f673ae）
 
 # Task Dependencies
 
