@@ -239,6 +239,7 @@ Go 后端（`class_times_record_back/`）采用 **yml 配置文件 + Nacos 服�
 | `NACOS_GROUP` | DEFAULT_GROUP | 配置分组 |
 | `NACOS_SCHEME` | http | 通信协议 |
 | `NACOS_REGISTER_IP` | 自动识别 | 服务注册 IP（容器部署时建议显式指定） |
+| `NACOS_SKIP_REGISTER` | 未设置 | 设为 `true` 跳过服务注册（deploy.sh test 测试实例，避免污染服务发现） |
 
 ### 降级策略
 
