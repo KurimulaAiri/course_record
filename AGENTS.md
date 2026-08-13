@@ -254,7 +254,7 @@ Nacos 不可达时：
 > 详见 `class_times_record_back/AGENTS.md`，以下是关键要点：
 
 - **按业务对象拆分**：超大文件（>1000 行）已按业务对象拆分到独立文件（如 `admin_business_mapper.go` → `institution_mapper.go`/`student_mapper.go`/...），主文件仅保留公共骨架
-- **请求日志中间件**：`common/middleware/logging.go` 作为最外层中间件接入 auth/business/admin 三个 net/http 服务
+- **请求日志中间件**：`common/middleware/logging.go` 作为最外层中间件接入 gateway/auth/business/admin 四个服务；请求日志按模块写入 `{LOG_FILE_DIR}/{模块}/{YYYY-MM-DD}_{模块}.log`（`LOG_FILE_DIR` 环境变量指定根目录，生产由 deploy.sh 注入 `/opt/go-deploy/logs`，跨天自动滚动、剥离 ANSI 颜色码）
 - **FlexibleInt64 类型**：`common/types/flexible.go` 兼容前端 `number | string` 联合类型，列表查询的状态字段统一使用，`0` 表示不过滤
 - **管理端密码哈希**：sys_user 表使用 SM3+salt 哈希存储（64 位 hex），非 BCrypt
 - **微信配置加载优先级**：环境变量 `WX_APP_ID`/`WX_APP_SECRET`（最高） > yml 配置文件 > 空值（功能不可用）
@@ -400,7 +400,7 @@ Nacos: `nacos.kurimula-airi.top:8848`, Sentinel: `sentinel.kurimula-airi.top:781
 
 Docker Compose (`class_times_record_back/docker-compose.yml`), all services `network_mode: host`. Jenkins CI/CD via `pipeline/Jenkinsfile`. DB credentials via MCP `get_db_config`.
 
-**Pre-deploy test gate**: `pipeline/Jenkinsfile` runs `Pre-Deploy Test` stage (between `Sync Source to Host` and `Build & Deploy`) — executes `bash deploy.sh test all`, which compiles the 4 Go services, starts them on isolated test ports (gateway=19999/business=20001/auth=20002/admin=20003), runs the full regression suite `go test ./poc/predeploy/...` covering all business APIs, then cleans up. Test failure aborts the pipeline; set `SKIP_BUILD=true` to skip. Test accounts via env vars `PRE_TEST_ADMIN_USERNAME/PASSWORD`, `PRE_TEST_MINI_ACCOUNT/PASSWORD` (see `class_times_record_back/CLAUDE.md`).
+**Pre-deploy test gate**: `pipeline/Jenkinsfile` runs `Pre-Deploy Test` stage (between `Sync Source to Host` and `Build & Deploy`) — executes `bash deploy.sh test all`, which compiles the 4 Go services, starts them on isolated test ports (gateway=19999/business=20001/auth=20002/admin=20003), runs the full regression suite `go test ./poc/predeploy/...` covering all business APIs, then cleans up. Test failure aborts the pipeline; set `SKIP_BUILD=true` to skip. Test accounts via env vars `PRE_TEST_ADMIN_USERNAME/PASSWORD`, `PRE_TEST_MINI_ACCOUNT/PASSWORD` or the `pre_test:` section of `config.prod.yml` (see `class_times_record_back/CLAUDE.md`).
 
 ---
 
