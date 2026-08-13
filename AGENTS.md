@@ -397,6 +397,8 @@ Nacos: `nacos.kurimula-airi.top:8848`, Sentinel: `sentinel.kurimula-airi.top:781
 
 Docker Compose (`class_times_record_back/docker-compose.yml`), all services `network_mode: host`. Jenkins CI/CD via `pipeline/Jenkinsfile`. DB credentials via MCP `get_db_config`.
 
+**Pre-deploy test gate**: `pipeline/Jenkinsfile` runs `Pre-Deploy Test` stage (between `Sync Source to Host` and `Build & Deploy`) — executes `bash deploy.sh test all`, which compiles the 4 Go services, starts them on isolated test ports (gateway=19999/business=20001/auth=20002/admin=20003), runs the full regression suite `go test ./poc/predeploy/...` covering all business APIs, then cleans up. Test failure aborts the pipeline; set `SKIP_BUILD=true` to skip. Test accounts via env vars `PRE_TEST_ADMIN_USERNAME/PASSWORD`, `PRE_TEST_MINI_ACCOUNT/PASSWORD` (see `class_times_record_back/CLAUDE.md`).
+
 ---
 
 ## WeChat Subscribe Message
