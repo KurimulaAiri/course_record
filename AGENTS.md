@@ -194,7 +194,7 @@ Go 后端（`class_times_record_back/`）采用 **yml 配置文件 + Nacos 服�
 | `GATEWAY_AUTH_URI` | http://localhost:10002 | Gateway → auth-service 路由 URI |
 | `GATEWAY_BUSINESS_URI` | http://localhost:10001 | Gateway → business-service 路由 URI |
 | `GATEWAY_ADMIN_URI` | http://localhost:10003 | Gateway → admin-service 路由 URI |
-| `GATEWAY_PORT` | 9999 | Gateway 监听端口 |
+| `GATEWAY_PORT` | 9999 | Gateway 监听端口（`-port` 参数 > `GATEWAY_PORT` env > 9999；deploy.sh test 用 19999） |
 | `AUTH_PORT` | 10002 | auth-service 监听端口 |
 | `BIZ_PORT` | 10001 | business-service 监听端口 |
 | `ADMIN_PORT` | 10003 | admin-service 监听端口 |
