@@ -83,6 +83,8 @@ Database: `class_times_record` (utf8mb4) on `121.196.229.10:3306`. Access via MC
 
 **Soft delete (is_delete)**: Core business tables use soft delete — `c_institution`, `c_teacher`, `c_student`, `c_parent`, `c_course`, `c_class`, `c_class_schedule`, `c_subscription_plan`, `c_course_record`, `c_record` all have `is_delete` column (`tinyint(1) NOT NULL DEFAULT 0`). All main-table queries in business/admin/auth services filter `is_delete = 0`. `is_available` (disable) and `is_delete` (archive) are independent. Link tables & log tables use hard delete. `sys_user`/`sys_role` use `is_deleted`.
 
+**c_course_record unique index (active_flag)**: `c_course_record` uses generated column `active_flag` (active=1, soft-deleted=NULL) + unique index `uk_course_record_active (student_id, course_id, active_flag)` — replaces the old `(student_id, course_id)` unique index so a new card for the same course can be added after soft-delete. Backend `InsertCourseRecord` also catches MySQL 1062 and returns a business hint. Course cards support permanent validity: `expire_time = NULL` means 永久有效 (empty `expireTime` from frontend → NULL in mapper).
+
 ### Backend Conventions
 
 **DTO/VO directory**: One subfolder per entity — `dto/{entity}/`, `vo/{entity}/`. Admin DTOs: `dto/admin/{entity}/`, prefixed `Admin`.
