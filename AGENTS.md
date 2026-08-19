@@ -141,6 +141,8 @@ sys_user N──N sys_role (sys_user_role)   sys_role N──N sys_menu (sys_rol
 |----------|--------|---------|-------------|
 | `/biz/teacher/delete` | POST | business-service | 删除教师及其关联 user_auth、user 记录 |
 | `/biz/student/cancel_subscribe` | POST | business-service | 取消家长对学生的微信订阅通知 |
+| `/biz/student/delete` | POST | business-service | 删除学生（软删主表+级联清理班级绑定/课卡/流水/订阅关系，保留家长账号） |
+| `/biz/course/delete` | POST | business-service | 删除课程（软删+级联软删课卡，仅机构管理员） |
 | `/admin/teacher_auth/toggle_institution_admin` | POST | admin-service | 切换教师机构管理员身份 |
 | `/admin/teacher/delete` | POST | admin-service | 管理端删除教师 |
 
