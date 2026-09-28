@@ -1,10 +1,15 @@
 # 临时文件
 .temp/
+temp/
 
 # IDE
 .idea/
 *.iml
 .vscode/
+.trae/
+
+# WorkBuddy 工作目录（会话记忆等，不入版本管理）
+.workbuddy/
 
 # 系统文件
 Thumbs.db
