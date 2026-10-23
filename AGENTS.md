@@ -349,13 +349,14 @@ Each module: `src/api/{module}/index.ts`, paths start with `/auth/` or `/biz/`. 
 
 ## MCP Server
 
-**Stack**: Node.js 22+ + TypeScript + @modelcontextprotocol/sdk + mysql2 + zod. Stdio transport, no HTTP port.
+**Stack**: Node.js 20+ + TypeScript（tsx）+ @modelcontextprotocol/sdk + mysql2 + zod。线上使用 Streamable HTTP，本地可用 stdio。
 
 ### Key Info
 
-- Single file: `server.ts` — all tools registered there
-- Env vars injected by MCP client (JENKINS_TOKEN, DB_PASSWORD required)
-- New tool: `server.registerTool(name, { description, inputSchema }, handler)` with zod schema
+- 入口 `course_record_mcp_server/src/server.ts`；工具按域拆分到 `src/tools/*.ts`，每个文件导出 `registerXxxTools(server)`
+- HTTP 分组端点：`/mcp`（全量）、`/mcp/database`、`/mcp/cdn`、`/mcp/ops`，鉴权 `Authorization: Bearer <MCP_AUTH_TOKEN>`
+- 环境变量集中在 `src/lib/common.ts`；线上凭证在服务器 `/opt/java-deploy/class_times_record_docker/.env`
+- 新工具：`server.registerTool(name, { description, inputSchema }, handler)`（zod schema）
 
 ### Available MCP Tools (by category)
 
@@ -364,6 +365,23 @@ Each module: `src/api/{module}/index.ts`, paths start with `/auth/` or `/biz/`. 
 - **Nacos**: `list_nacos_services`, `list_nacos_configs`, `get_nacos_config`, `update_nacos_config`, `get_nacos_service_instances`, `list_nacos_ai_mcp`, `get_nacos_ai_mcp`, `list_nacos_ai_prompt`, `list_nacos_ai_agent`, `list_nacos_ai_skill`
 - **Sentinel**: `list_sentinel_apps`, `get_sentinel_machines`, `get_sentinel_flow_rules`, `get_sentinel_degrade_rules`, `remove_sentinel_machine`, `set_sentinel_flow_rule`, `delete_sentinel_flow_rule`, `set_sentinel_degrade_rule`, `delete_sentinel_degrade_rule`
 - **Docker**: `list_docker_containers`, `get_docker_container_info`, `docker_container_action`, `get_docker_container_logs`, `list_docker_images`, `get_docker_system_info`, `remove_docker_image`, `prune_docker_images`
+- **多吉云 CDN**: `doge_cdn_*`（7 个，域名/证书/刷新预热/统计/日志）
+- **Cloudflare DNS**: `cloudflare_*`（5 个，zone 与 DNS 记录管理）
+- **Gitea**: `gitea_*`（17 个，仓库/分支/提交/文件/Issue/PR/Release）
+- **Cloudflare R2**: `r2_*`（10 个，桶与对象管理、预签名 URL）
+- **宝塔面板**: `bt_*` / `get_bt_*` / `list_bt_*`（43 个，站点/数据库/计划任务/防火墙/文件/SSL）
+
+### MCP 客户端配置清单（必须同步维护）
+
+| 客户端 | 文件 | 组织形式 |
+| --- | --- | --- |
+| WorkBuddy | `course_record_mcp_server/config/workbuddy.mcp.json` | 所有服务放在同一个 `mcpServers` 对象中 |
+| Trae | `course_record_mcp_server/config/trae/*.json` | 一个服务一个文件，每个文件仅含一个 `mcpServers` 条目 |
+
+**强制规则**：每次新增/删除工具域、修改 HTTP 端点路径、调整分组或 Token 配置后，必须在同一个 commit 内同步更新上述配置清单。
+
+- 配置中的 `Authorization` 取自服务器 `.env` 的 `MCP_AUTH_TOKEN`；分组 Token（`MCP_TOKEN_DATABASE`/`MCP_TOKEN_CDN`/`MCP_TOKEN_OPS`）未单独配置时复用该值。
+- 配置文件包含真实 Bearer Token，仓库必须保持私有；Token 轮换时同步更新所有清单。
 
 ---
 
