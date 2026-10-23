@@ -381,6 +381,7 @@ Each module: `src/api/{module}/index.ts`, paths start with `/auth/` or `/biz/`. 
 **强制规则**：每次新增/删除工具域、修改 HTTP 端点路径、调整分组或 Token 配置后，必须在同一个 commit 内同步更新上述配置清单（WorkBuddy 的单个文件 + Trae 的对应域文件）。
 
 - 工具域与端点：`database`、`cdn`、`jenkins`、`nacos`、`sentinel`、`docker`、`baota`、`cloudflare`、`gitea`、`r2`，路径统一为 `/mcp/{domain}`。
+- 新增工具域时还必须同步更新服务器 nginx vhost（`/www/server/panel/vhost/nginx/mcp.kurimula-airi.top.conf`）中的 `/mcp/(...)` 直连正则并 `nginx -s reload`；否则新端点会落入 router 兜底并返回全量工具。
 - 配置中的 `Authorization` 取自服务器 `.env` 的 `MCP_AUTH_TOKEN`；分组/单域 Token（`MCP_TOKEN_{DOMAIN}`）未单独配置时复用该值。
 - 配置文件包含真实 Bearer Token，仓库必须保持私有；Token 轮换时同步更新所有清单。
 
