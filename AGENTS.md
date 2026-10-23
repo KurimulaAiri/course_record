@@ -354,7 +354,7 @@ Each module: `src/api/{module}/index.ts`, paths start with `/auth/` or `/biz/`. 
 ### Key Info
 
 - 入口 `course_record_mcp_server/src/server.ts`；工具按域拆分到 `src/tools/*.ts`，每个文件导出 `registerXxxTools(server)`
-- HTTP 分组端点：`/mcp`（全量）、`/mcp/database`、`/mcp/cdn`、`/mcp/ops`，鉴权 `Authorization: Bearer <MCP_AUTH_TOKEN>`
+- HTTP 端点：`/mcp`（全量）、`/mcp/ops`（运维聚合）、`/mcp/database`、`/mcp/cdn`、`/mcp/{jenkins|nacos|sentinel|docker|baota|cloudflare|gitea|r2}`（单工具域），鉴权 `Authorization: Bearer <MCP_AUTH_TOKEN>`
 - 环境变量集中在 `src/lib/common.ts`；线上凭证在服务器 `/opt/java-deploy/class_times_record_docker/.env`
 - 新工具：`server.registerTool(name, { description, inputSchema }, handler)`（zod schema）
 
@@ -375,12 +375,13 @@ Each module: `src/api/{module}/index.ts`, paths start with `/auth/` or `/biz/`. 
 
 | 客户端 | 文件 | 组织形式 |
 | --- | --- | --- |
-| WorkBuddy | `course_record_mcp_server/config/workbuddy.mcp.json` | 所有服务放在同一个 `mcpServers` 对象中 |
-| Trae | `course_record_mcp_server/config/trae/*.json` | 一个服务一个文件，每个文件仅含一个 `mcpServers` 条目 |
+| WorkBuddy | `course_record_mcp_server/config/workbuddy.mcp.json` | 10 个工具域全部放在同一个 `mcpServers` 对象中 |
+| Trae | `course_record_mcp_server/config/trae/*.json` | 一个工具域一个文件（10 个），每个文件仅含一个 `mcpServers` 条目 |
 
-**强制规则**：每次新增/删除工具域、修改 HTTP 端点路径、调整分组或 Token 配置后，必须在同一个 commit 内同步更新上述配置清单。
+**强制规则**：每次新增/删除工具域、修改 HTTP 端点路径、调整分组或 Token 配置后，必须在同一个 commit 内同步更新上述配置清单（WorkBuddy 的单个文件 + Trae 的对应域文件）。
 
-- 配置中的 `Authorization` 取自服务器 `.env` 的 `MCP_AUTH_TOKEN`；分组 Token（`MCP_TOKEN_DATABASE`/`MCP_TOKEN_CDN`/`MCP_TOKEN_OPS`）未单独配置时复用该值。
+- 工具域与端点：`database`、`cdn`、`jenkins`、`nacos`、`sentinel`、`docker`、`baota`、`cloudflare`、`gitea`、`r2`，路径统一为 `/mcp/{domain}`。
+- 配置中的 `Authorization` 取自服务器 `.env` 的 `MCP_AUTH_TOKEN`；分组/单域 Token（`MCP_TOKEN_{DOMAIN}`）未单独配置时复用该值。
 - 配置文件包含真实 Bearer Token，仓库必须保持私有；Token 轮换时同步更新所有清单。
 
 ---
